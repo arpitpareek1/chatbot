@@ -6,25 +6,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot</title>
     <style>
-        /* Some basic CSS for styling the chat interface */
         #chat-container {
-            width: 500px;
+            max-width: 400px;
             margin: 0 auto;
             padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            background-color: #f4f4f4;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         #chat-log {
-            height: 450px;
-            overflow-y: auto;
+            height: 300px;
+            overflow-y: scroll;
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #ques {
+            margin-top: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         #user-form {
-            align-items: center;
+            margin-top: 10px;
+            display: flex;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        #send-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        #sug_p {
+            text-decoration-line: underline;
+        }
+
+        #sug_p:hover {
+            text-decoration-line: none;
+            cursor: pointer;
+        }
+        @keyframes dot-blink {
+
+            0%,
+            20% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+        .loading-container {
             text-align: center;
-            margin-bottom: 15px;
+            margin-top: 50px;
+        }
+        .loading-container p {
+            font-size: 24px;
+        }
+        #dot-animation {
+            display: inline-block;
+            animation: dot-blink 1s infinite;
         }
     </style>
 </head>
@@ -45,12 +111,11 @@
         const userForm = document.getElementById('user-form');
         const userInput = document.getElementById('user-input');
         const ques = document.getElementById('ques');
-        
+
         userForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const userMessage = userInput.value;
             submitForm(userMessage)
-
             userInput.value = '';
         });
 
@@ -85,6 +150,7 @@
         function add_loading() {
             const messageElement = document.createElement('div');
             messageElement.innerHTML = `Loading...`;
+            messageElement.id = "dot-animation"
             chatLog.appendChild(messageElement);
         }
         function remove_loading() {
@@ -101,8 +167,9 @@
                 botQues.forEach(element => {
                     const messageElement = document.createElement('p');
                     messageElement.innerHTML = `${element}`;
+                    messageElement.id = "sug_p";
                     messageElement.onclick = (e) => {
-                       const userNxtQue = e.target.innerHTML
+                        const userNxtQue = e.target.innerHTML
                         submitForm(userNxtQue);
                         ques.innerHTML = ""
                     }
