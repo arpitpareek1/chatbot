@@ -1,57 +1,29 @@
 import spacy
-from chatbot_data_set import chatbot_dataset, product_faqs
-from gensim.models import Word2Vec
-import re
+from chatbot_data_set import greetings, product_faqs
+from dataset import data_set
+from sklearn.metrics.pairwise import cosine_similarity
 
 
-# Load the spaCy model
 nlp = spacy.load("en_core_web_sm")
 
-
-dataset = chatbot_dataset
-
-
-def find_answer(user_question):
+def find_answer(user_que):
+    user_question = user_que.lower()
     if "product" in user_question:
         isprodt = calculate_product_similarity(user_question)
         if isprodt is not None:
             return isprodt
 
-    max_similarity = 0
-    best_match = None
+        
+    #new aproch
+    best_match = find_best_match(user_question, data_set)
+    if best_match:
+        return best_match
+    else :
+        return {"ans":"Sorry, I didn't get you." ,"ques":[]}
 
-    similer_que = []
-    for item in dataset:
-        # Calculate similarity using custom vectors
-        similarity = calculate_similarity_with_custom_vectors(user_question, item["que"])
-        print("similarity", similarity)
-
-        if similarity > max_similarity:
-            max_similarity = similarity
-            best_match = item["ans"]
-            if similarity > 0.45 and similarity < 0.8:
-                similer_que.append(item['que'])
-
-
-    if max_similarity >= 0.65:
-        return {"ans":best_match ,"ques":similer_que}
-    else:
-        if len(user_question) < 15:
-            isGreet = calculate_greeting_similarity(user_question)
-
-            if isGreet is None:
-                return {"ans":"I'm sorry, but it looks like you pressed enter without fully writing your question. Please try again." ,"ques":similer_que}
-            elif isGreet:
-               return {"ans":isGreet ,"ques":similer_que}
-               
-        else:
-            return {"ans":"Sorry, I didn't get you." ,"ques":similer_que}
              
 
 def calculate_greeting_similarity(user_question):
-    greetings = ["hello", "hi", "hey", "good morning",
-                 "good afternoon", "good evening"]
-
     similarities = [nlp(user_question).similarity(nlp(greeting))
                     for greeting in greetings]
 
@@ -59,10 +31,9 @@ def calculate_greeting_similarity(user_question):
 
     if max_similarity >= 0.7:
         best_greeting = greetings[similarities.index(max_similarity)]
-        return f"{best_greeting.capitalize()}! How can I assist you today?"
+        return f"{best_greeting.capitalize()}!"
 
     return None
-
 
 def calculate_product_similarity(user_question):
 
@@ -77,24 +48,49 @@ def calculate_product_similarity(user_question):
 
     return None
 
+def tokenize_and_vectorize(text):
+    doc = nlp(text)
+    vectors = [token.vector for token in doc]
+    return vectors
 
-def create_vector(provided_text):
-    print("creating vector")
-    sentences = re.split(r'(?<=[.!?])\s+', provided_text)
-    tokenized_sentences = [sentence.split() for sentence in sentences]
-    model = Word2Vec(sentences=tokenized_sentences,
-                     vector_size=100, window=5, min_count=1, sg=0)
-    model.wv.save_word2vec_format('vectors.txt', binary=False)
+def aggregate_vectors(vectors):
+    if vectors:
+        return sum(vectors) / len(vectors)
+    else:
+        return None
 
+def calculate_similarity(user_vector, dataset_vectors):
+    similarities = cosine_similarity([user_vector], dataset_vectors)
+    return similarities[0]
 
-def load_victors(path):
-    nlp.vocab.vectors.from_disk(path)
+def find_best_match(user_que, dataset):
+    ques = []
+    ans = ""
 
+    user_vector = aggregate_vectors(tokenize_and_vectorize(user_que))
+    if user_vector is not None:
+        similarities = calculate_similarity(
+            user_vector, [item["vector"] for item in dataset])
+        
+        best_match_index = similarities.argmax()
+        print("similarities[best_match_index]",similarities[best_match_index])
+        if similarities[best_match_index] > 0.8:
+            ans = dataset[best_match_index]['ans']
+        elif similarities[best_match_index] > 0.5:
+            ans = "I think you are asking about " +  dataset[best_match_index]['que'] + " if yes then "+ dataset[best_match_index]['ans']
+        else :
+            if len(user_que) > 10:
+                ans = "I didn't get you"
+            else :
+                isGreet = calculate_greeting_similarity(user_que)
+                if isGreet is not None:
+                    ans =  isGreet
+                else:
+                    ans = "Please write few details more"
+        for index, item in enumerate(similarities):
+            if item > 0.6 and index != best_match_index:
+                ques.append(dataset[index]['que'])
 
-def calculate_similarity_with_custom_vectors(text1, text2):
-    doc1 = nlp(text1)
-    doc2 = nlp(text2)
-    
-    # Calculate similarity using custom vectors
-    similarity = doc1.similarity(doc2)
-    return similarity
+        return {"ans":ans, "ques": ques}
+    else:
+        return {"ans":"I didn't get you", "ques": ques}

@@ -25,6 +25,8 @@
         }
 
         #ques {
+            height: 100px;
+            overflow-y: scroll;
             margin-top: 10px;
             background-color: #fff;
             border-radius: 5px;
@@ -85,9 +87,11 @@
             text-align: center;
             margin-top: 50px;
         }
+
         .loading-container p {
             font-size: 24px;
         }
+
         #dot-animation {
             display: inline-block;
             animation: dot-blink 1s infinite;
@@ -99,7 +103,7 @@
     <div id="chat-container">
         <div id="chat-log">
         </div>
-        <div id="ques"></div>
+        <div id="quesperent"></div>
         <form id="user-form">
             <input type="text" id="user-input" placeholder="Type your message...">
             <button type="submit" id="send-button">Send</button>
@@ -110,7 +114,7 @@
         const chatLog = document.getElementById('chat-log');
         const userForm = document.getElementById('user-form');
         const userInput = document.getElementById('user-input');
-        const ques = document.getElementById('ques');
+        const quesperent = document.getElementById('quesperent');
 
         userForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -132,8 +136,8 @@
             })
                 .then(response => response.json())
                 .then(data => {
+                    console.log(data);
                     remove_loading()
-                    console.log("data", data);
                     const botMessage = data.bot_message.ans;
                     const botQues = data.bot_message.ques
                     addMessage('Bot', botMessage);
@@ -145,6 +149,7 @@
             const messageElement = document.createElement('div');
             messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
             chatLog.appendChild(messageElement);
+            chatLog.scrollTop = chatLog.scrollHeight;
         }
 
         function add_loading() {
@@ -158,24 +163,31 @@
             chatLog.removeChild(chatLog.children[chatLog.children.length - 1]);
         }
         function add_ques(botQues) {
-            ques.innerHTML = ''
+            quesperent.innerHTML = ''
             if (botQues.length > 0) {
-                const messageElement = document.createElement('h5');
-                messageElement.innerHTML = "Silimer questions:- "
-                ques.appendChild(messageElement);
-                let index = 1
-                botQues.forEach(element => {
-                    const messageElement = document.createElement('p');
-                    messageElement.innerHTML = `${element}`;
-                    messageElement.id = "sug_p";
-                    messageElement.onclick = (e) => {
-                        const userNxtQue = e.target.innerHTML
-                        submitForm(userNxtQue);
-                        ques.innerHTML = ""
-                    }
+                const messageElementDiv = document.createElement('div');
+                messageElementDiv.id = "ques"
+                quesperent.append(messageElementDiv);
+
+                const ques = document.getElementById("ques")
+                if (ques) {
+                    const messageElement = document.createElement('h5');
+                    messageElement.innerHTML = "Related Querys:- "
                     ques.appendChild(messageElement);
-                    index++
-                });
+                    let index = 1
+                    botQues.forEach(element => {
+                        const messageElement = document.createElement('p');
+                        messageElement.innerHTML = `${element}`;
+                        messageElement.onclick = (e) => {
+                            const userNxtQue = e.target.innerHTML
+                            submitForm(userNxtQue);
+                            ques.innerHTML = ""
+                        }
+                        ques.appendChild(messageElement);
+                        index++
+                    });
+
+                }
             }
         }
     </script>

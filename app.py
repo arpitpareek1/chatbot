@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request, render_template
 
-from chat_bot_methods import create_vector, find_answer , load_victors
-from chatbot_data_set import product_info_text
+from chat_bot_methods import  find_answer 
 
 app = Flask(__name__)
 
