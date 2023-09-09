@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        /* Some basic CSS for styling the chat interface */
+        #chat-container {
+            width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        #chat-log {
+            height: 450px;
+            overflow-y: auto;
+        }
+
+        #user-form {
+            align-items: center;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat-container">
+        <div id="chat-log">
+        </div>
+        <div id="ques"></div>
+        <form id="user-form">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button type="submit" id="send-button">Send</button>
+        </form>
+    </div>
+
+    <script>
+        const chatLog = document.getElementById('chat-log');
+        const userForm = document.getElementById('user-form');
+        const userInput = document.getElementById('user-input');
+        const ques = document.getElementById('ques');
+        
+        userForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userMessage = userInput.value;
+            submitForm(userMessage)
+
+            userInput.value = '';
+        });
+
+        const submitForm = (question) => {
+            if (question.trim() === '') return;
+            addMessage('You', question);
+            add_loading()
+            fetch('/ask', {
+                method: 'POST',
+                body: new URLSearchParams({ 'user_input': question }),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    remove_loading()
+                    console.log("data", data);
+                    const botMessage = data.bot_message.ans;
+                    const botQues = data.bot_message.ques
+                    addMessage('Bot', botMessage);
+                    add_ques(botQues)
+                });
+        }
+
+        function addMessage(sender, message) {
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatLog.appendChild(messageElement);
+        }
+
+        function add_loading() {
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = `Loading...`;
+            chatLog.appendChild(messageElement);
+        }
+        function remove_loading() {
+            const messageElement = document.createElement('div');
+            chatLog.removeChild(chatLog.children[chatLog.children.length - 1]);
+        }
+        function add_ques(botQues) {
+            ques.innerHTML = ''
+            if (botQues.length > 0) {
+                const messageElement = document.createElement('h5');
+                messageElement.innerHTML = "Silimer questions:- "
+                ques.appendChild(messageElement);
+                let index = 1
+                botQues.forEach(element => {
+                    const messageElement = document.createElement('p');
+                    messageElement.innerHTML = `${element}`;
+                    messageElement.onclick = (e) => {
+                       const userNxtQue = e.target.innerHTML
+                        submitForm(userNxtQue);
+                        ques.innerHTML = ""
+                    }
+                    ques.appendChild(messageElement);
+                    index++
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>
