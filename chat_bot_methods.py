@@ -1,10 +1,32 @@
 import spacy
-from chatbot_data_set import greetings, product_faqs
+from chatbot_data_set import greetings, product_faqs , keyword_synonyms
 from dataset import data_set
 from sklearn.metrics.pairwise import cosine_similarity
 
 
 nlp = spacy.load("en_core_web_sm")
+
+
+
+def find_fixed_keyword(user_input):
+    for fixed_keyword, synonyms in keyword_synonyms.items():
+        if user_input in synonyms:
+            find_synonym(user_input, fixed_keyword)
+            return fixed_keyword
+    return None 
+
+
+def find_synonym(user_input, fixed_keyword):
+    user_doc = nlp(user_input)
+    fixed_keyword_doc = nlp(fixed_keyword)
+    
+    similarity = user_doc.similarity(fixed_keyword_doc)
+    
+    # You can adjust the similarity threshold as needed
+    if similarity > 0.7:
+        return fixed_keyword
+    else:
+        return user_input
 
 def find_answer(user_que):
     user_question = user_que.lower()
